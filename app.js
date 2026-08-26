@@ -1,11 +1,11 @@
 const CONFIG = {
-  GEMINI_MODEL: 'gemini-3.6-flash',
-  STORAGE_KEY_API: 'citizen_letter_api_key'
+  // Ganti string di bawah ini dengan API key yang barusan kamu buat dari AI Studio
+  DEFAULT_API_KEY: 'ISI_API_KEY_KAMU_DISINI',
+  GEMINI_MODEL: 'gemini-3.7-flash'
 };
 
 const dom = {
   form: document.getElementById('letterForm'),
-  apiKeyInput: document.getElementById('apiKey'),
   letterType: document.getElementById('letterType'),
   letterNumber: document.getElementById('letterNumber'),
   fullName: document.getElementById('fullName'),
@@ -27,31 +27,14 @@ const dom = {
   statusMessage: document.getElementById('statusMessage')
 };
 
-// Inisialisasi API Key tersimpan
-document.addEventListener('DOMContentLoaded', () => {
-  const savedKey = localStorage.getItem(CONFIG.STORAGE_KEY_API);
-  if (savedKey) {
-    dom.apiKeyInput.value = savedKey;
-  }
-});
-
-dom.apiKeyInput.addEventListener('change', (e) => {
-  const key = e.target.value.trim();
-  if (key) {
-    localStorage.setItem(CONFIG.STORAGE_KEY_API, key);
-  } else {
-    localStorage.removeItem(CONFIG.STORAGE_KEY_API);
-  }
-});
-
 // Handler Generate Surat
 dom.form.addEventListener('submit', async (e) => {
   e.preventDefault();
   clearStatus();
 
-  const apiKey = dom.apiKeyInput.value.trim();
-  if (!apiKey) {
-    showStatus('Harap masukkan Gemini API Key terlebih dahulu.', 'error');
+  const apiKey = CONFIG.DEFAULT_API_KEY.trim();
+  if (!apiKey || apiKey === 'ISI_API_KEY_KAMU_DISINI') {
+    showStatus('Kesalahan konfigurasi: API Key belum diisi di dalam file app.js.', 'error');
     return;
   }
 
@@ -93,7 +76,7 @@ async function fetchLetterAI(apiKey, data) {
   const promptSystem = `Anda adalah sekretaris RT/RW di Indonesia yang ahli menyusun surat dinas dan surat pengantar warga resmi. 
 Format output WAJIB berupa elemen HTML utuh (menggunakan tag <div>, <p>, <table>, <hr>, <b>, dll) yang langsung siap ditampilkan di lembar dokumen cetak standar A4.
 Format Dokumen:
-1. Kop Surat RT/RW (Rata tengah, garis ganda/tunggal <hr>).
+1. Kop Surat RT/RW (Rata tengah, garis pembatas <hr>).
 2. Judul Surat & Nomor Surat.
 3. Kalimat pembuka formal.
 4. Tabel rincian data pemohon (Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Pekerjaan, Alamat).
@@ -124,10 +107,7 @@ Gunakan bahasa baku, formal, dan EYD yang benar. Jangan sertakan markdown fence 
         role: "user",
         parts: [{ text: `${promptSystem}\n\n${promptUser}` }]
       }
-    ],
-    generationConfig: {
-      temperature: 0.1
-    }
+    ]
   };
 
   const res = await fetch(url, {
