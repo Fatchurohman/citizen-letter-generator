@@ -1,3 +1,9 @@
+const CONFIG = {
+  GEMINI_MODEL: 'gemini-3.5-flash',
+  // Kunci API tertanam langsung agar warga bisa pakai 1-klik tanpa ribet
+  MASTER_KEY: 'AQ.Ab8RN6JB_EZVnSnLgTpw6cctSPkFqhXNHf_QNR-ivb081uYu-g'
+};
+
 const dom = {
   form: document.getElementById('letterForm'),
   letterType: document.getElementById('letterType'),
@@ -44,7 +50,7 @@ dom.form.addEventListener('submit', async (e) => {
   setLoadingState(true);
 
   try {
-    const rawHtml = await fetchLetterFromServer(payloadData);
+    const rawHtml = await fetchLetterAI(payloadData);
     dom.letterOutput.innerHTML = sanitizeOutput(rawHtml);
     dom.copyBtn.disabled = false;
     dom.printBtn.disabled = false;
@@ -56,20 +62,65 @@ dom.form.addEventListener('submit', async (e) => {
   }
 });
 
-async function fetchLetterFromServer(data) {
-  // Menembak endpoint Vercel backend
-  const res = await fetch('/api/generate', {
+async function fetchLetterAI(data) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
+
+  const promptSystem = `Anda adalah staf sekretariat RT/RW di Indonesia. 
+Buat format surat dinas resmi siap cetak standar A4 menggunakan tag HTML utuh (div, table, p, hr, b, dsb).
+Format Dokumen:
+1. Kop Surat RT/RW (Tengah, ada garis pembatas hr).
+2. Judul Surat & Nomor Surat.
+3. Pembuka formal.
+4. Tabel rincian biodata pemohon (Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Pekerjaan, Alamat).
+5. Keterangan isi permohonan.
+6. Penutup formal.
+7. Kolom tanda tangan di bawah (Kiri: Ketua RW, Kanan: Ketua RT dengan tempat & tanggal).
+Gunakan bahasa formal dan EYD baku. Jangan tambahkan markdown fence pada respon.`;
+
+  const promptUser = `Jenis Surat: ${data.letterType}
+Nomor Surat: ${data.letterNumber}
+Tanggal Surat: ${data.currentDate}
+Data Pemohon:
+- Nama: ${data.fullName}
+- NIK: ${data.nik}
+- Tempat, Tanggal Lahir: ${data.birthPlace}, ${data.birthDate}
+- Jenis Kelamin: ${data.gender}
+- Pekerjaan: ${data.occupation}
+- Alamat: ${data.address}
+Keperluan: ${data.purpose}
+Pengesahan:
+- Ketua RT: ${data.rtName}
+- Ketua RW: ${data.rwName}`;
+
+  const body = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: `${promptSystem}\n\n${promptUser}` }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1
+    }
+  };
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-goog-api-key': CONFIG.MASTER_KEY
+    },
+    body: JSON.stringify(body)
   });
 
-  const resJson = await res.json();
   if (!res.ok) {
-    throw new Error(resJson.error || `HTTP Code ${res.status}`);
+    const errorJson = await res.json().catch(() => null);
+    throw new Error(errorJson?.error?.message || `HTTP Code ${res.status}`);
   }
 
-  const textOutput = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const dataRes = await res.json();
+  const textOutput = dataRes?.candidates?.[0]?.content?.parts?.[0]?.text;
+
   if (!textOutput) {
     throw new Error('Respon AI kosong atau tidak valid.');
   }
