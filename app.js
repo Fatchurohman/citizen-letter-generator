@@ -1,8 +1,3 @@
-const CONFIG = {
-  API_KEY: 'AQ.Ab8RN6JB_EZVnSnLgTpw6cctSPkFqhXNHf_QNR-ivb081uYu-g',
-  GEMINI_MODEL: 'gemini-3.5-flash'
-};
-
 const dom = {
   form: document.getElementById('letterForm'),
   letterType: document.getElementById('letterType'),
@@ -26,16 +21,9 @@ const dom = {
   statusMessage: document.getElementById('statusMessage')
 };
 
-// Handler Submit Form
 dom.form.addEventListener('submit', async (e) => {
   e.preventDefault();
   clearStatus();
-
-  const apiKey = CONFIG.API_KEY.trim();
-  if (!apiKey) {
-    showStatus('API Key belum diatur di app.js.', 'error');
-    return;
-  }
 
   const payloadData = {
     letterType: dom.letterType.value,
@@ -56,11 +44,11 @@ dom.form.addEventListener('submit', async (e) => {
   setLoadingState(true);
 
   try {
-    const rawHtml = await fetchLetterAI(apiKey, payloadData);
+    const rawHtml = await fetchLetterFromServer(payloadData);
     dom.letterOutput.innerHTML = sanitizeOutput(rawHtml);
     dom.copyBtn.disabled = false;
     dom.printBtn.disabled = false;
-    showStatus('Surat dinas berhasil disusun. Dokumen siap dicetak atau disunting.', 'success');
+    showStatus('Dokumen surat berhasil disusun secara otomatis.', 'success');
   } catch (err) {
     showStatus(`Gagal memproses dokumen: ${err.message}`, 'error');
   } finally {
@@ -68,66 +56,20 @@ dom.form.addEventListener('submit', async (e) => {
   }
 });
 
-// Request ke Gemini REST API dengan model 3.5-flash
-async function fetchLetterAI(apiKey, data) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
-
-  const promptSystem = `Anda adalah staf sekretariat RT/RW di Indonesia. 
-Buat format surat dinas resmi siap cetak standar A4 menggunakan tag HTML utuh (div, table, p, hr, b, dsb).
-Format Dokumen:
-1. Kop Surat RT/RW (Tengah, ada garis pembatas hr).
-2. Judul Surat & Nomor Surat.
-3. Pembuka formal.
-4. Tabel rincian biodata pemohon (Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Pekerjaan, Alamat).
-5. Keterangan isi permohonan.
-6. Penutup formal.
-7. Kolom tanda tangan di bawah (Kiri: Ketua RW, Kanan: Ketua RT dengan tempat & tanggal).
-Gunakan bahasa formal dan EYD baku. Jangan tambahkan markdown fence (\`\`\`html) pada respon.`;
-
-  const promptUser = `Jenis Surat: ${data.letterType}
-Nomor Surat: ${data.letterNumber}
-Tanggal Surat: ${data.currentDate}
-Data Pemohon:
-- Nama: ${data.fullName}
-- NIK: ${data.nik}
-- Tempat, Tanggal Lahir: ${data.birthPlace}, ${data.birthDate}
-- Jenis Kelamin: ${data.gender}
-- Pekerjaan: ${data.occupation}
-- Alamat: ${data.address}
-Keperluan: ${data.purpose}
-Pengesahan:
-- Ketua RT: ${data.rtName}
-- Ketua RW: ${data.rwName}`;
-
-  const body = {
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: `${promptSystem}\n\n${promptUser}` }]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.1
-    }
-  };
-
-  const res = await fetch(url, {
+async function fetchLetterFromServer(data) {
+  // Menembak endpoint Vercel backend
+  const res = await fetch('/api/generate', {
     method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey
-    },
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
   });
 
+  const resJson = await res.json();
   if (!res.ok) {
-    const errorJson = await res.json().catch(() => null);
-    throw new Error(errorJson?.error?.message || `HTTP Code ${res.status}`);
+    throw new Error(resJson.error || `HTTP Code ${res.status}`);
   }
 
-  const dataRes = await res.json();
-  const textOutput = dataRes?.candidates?.[0]?.content?.parts?.[0]?.text;
-
+  const textOutput = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!textOutput) {
     throw new Error('Respon AI kosong atau tidak valid.');
   }
@@ -135,16 +77,14 @@ Pengesahan:
   return textOutput.replace(/^```html\s*|```\s*$/gi, '').trim();
 }
 
-// Action Buttons
 dom.copyBtn.addEventListener('click', async () => {
   const content = dom.letterOutput.innerText;
   if (!content) return;
-
   try {
     await navigator.clipboard.writeText(content);
-    showStatus('Teks surat berhasil disalin ke clipboard.', 'info');
+    showStatus('Teks surat berhasil disalin.', 'info');
   } catch {
-    showStatus('Gagal menyalin teks otomatis.', 'error');
+    showStatus('Gagal menyalin teks.', 'error');
   }
 });
 
@@ -152,7 +92,6 @@ dom.printBtn.addEventListener('click', () => {
   window.print();
 });
 
-// Format Tanggal & Sanitasi
 function formatDate(val) {
   if (!val) return '';
   const d = new Date(val);
@@ -170,10 +109,10 @@ function sanitizeOutput(html) {
 function setLoadingState(isLoading) {
   dom.generateBtn.disabled = isLoading;
   if (isLoading) {
-    dom.btnText.textContent = 'Menyusun Surat...';
+    dom.btnText.textContent = 'Membuat Surat...';
     dom.spinner.classList.remove('hidden');
   } else {
-    dom.btnText.textContent = 'Generate Surat AI';
+    dom.btnText.textContent = 'Buat Surat Otomatis';
     dom.spinner.classList.add('hidden');
   }
 }
