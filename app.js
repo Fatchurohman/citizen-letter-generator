@@ -1,3 +1,8 @@
+const CONFIG = {
+  // Masukkan URL Web App Google Apps Script milikmu di bawah ini
+  GAS_URL: "SALIN_URL_WEB_APP_GAS_DISINI"
+};
+
 const dom = {
   form: document.getElementById('letterForm'),
   letterType: document.getElementById('letterType'),
@@ -26,18 +31,18 @@ dom.form.addEventListener('submit', async (e) => {
   clearStatus();
 
   const payloadData = {
-    letterType: dom.letterType.value,
-    letterNumber: dom.letterNumber.value.trim() || '[Nomor Surat]',
-    fullName: dom.fullName.value.trim(),
-    nik: dom.nik.value.trim(),
-    gender: dom.gender.value,
-    birthPlace: dom.birthPlace.value.trim(),
-    birthDate: formatDate(dom.birthDate.value),
-    occupation: dom.occupation.value.trim(),
-    address: dom.address.value.trim(),
-    rtName: dom.rtName.value.trim(),
-    rwName: dom.rwName.value.trim(),
-    purpose: dom.purpose.value.trim(),
+    letterType: dom.letterType?.value || '',
+    letterNumber: dom.letterNumber?.value.trim() || '[Nomor Surat]',
+    fullName: dom.fullName?.value.trim() || '',
+    nik: dom.nik?.value.trim() || '',
+    gender: dom.gender?.value || '',
+    birthPlace: dom.birthPlace?.value.trim() || '',
+    birthDate: formatDate(dom.birthDate?.value),
+    occupation: dom.occupation?.value.trim() || '',
+    address: dom.address?.value.trim() || '',
+    rtName: dom.rtName?.value.trim() || '',
+    rwName: dom.rwName?.value.trim() || '',
+    purpose: dom.purpose?.value.trim() || '',
     currentDate: formatCurrentDate()
   };
 
@@ -45,46 +50,59 @@ dom.form.addEventListener('submit', async (e) => {
 
   try {
     const rawHtml = await fetchLetterAI(payloadData);
+    if (!dom.letterOutput) throw new Error('Elemen preview dokumen tidak ditemukan di DOM.');
+    
     dom.letterOutput.innerHTML = sanitizeOutput(rawHtml);
     dom.copyBtn.disabled = false;
     dom.printBtn.disabled = false;
     showStatus('Dokumen surat berhasil disusun secara otomatis.', 'success');
   } catch (err) {
-    showStatus(`Gagal memproses dokumen: ${err.message}`, 'error');
+    const errorMessage = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
+    showStatus(`Gagal memproses dokumen: ${errorMessage}`, 'error');
   } finally {
     setLoadingState(false);
   }
 });
 
 async function fetchLetterAI(data) {
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbz1fX53liAfW2zUZNDydG2PdD0f5T8HaZI8LMxSX9PyNdApEiMhrGbNOmfSrIxTcK1xcQ/exec";
+  if (!CONFIG.GAS_URL || CONFIG.GAS_URL.startsWith('SALIN_URL')) {
+    throw new Error('URL Google Apps Script belum dikonfigurasi di app.js.');
+  }
 
-  const res = await fetch(GAS_URL, {
+  const res = await fetch(CONFIG.GAS_URL, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
     body: JSON.stringify(data)
   });
 
   if (!res.ok) {
-    throw new Error(`HTTP Code ${res.status}`);
+    throw new Error(`HTTP Error status: ${res.status}`);
   }
 
-  const dataRes = await res.json();
-  
-  if (dataRes.error) {
+  const responseText = await res.text();
+  let dataRes;
+  try {
+    dataRes = JSON.parse(responseText);
+  } catch {
+    throw new Error('Gagal melakukan parsing data JSON dari server.');
+  }
+
+  if (dataRes?.error) {
     throw new Error(dataRes.error);
   }
 
   const textOutput = dataRes?.candidates?.[0]?.content?.parts?.[0]?.text;
-
   if (!textOutput) {
-    throw new Error('Respon AI kosong atau gagal diproses.');
+    throw new Error('Respon AI kosong atau format data tidak valid.');
   }
 
   return textOutput.replace(/^```html\s*|```\s*$/gi, '').trim();
 }
 
-dom.copyBtn.addEventListener('click', async () => {
-  const content = dom.letterOutput.innerText;
+dom.copyBtn?.addEventListener('click', async () => {
+  const content = dom.letterOutput?.innerText;
   if (!content) return;
   try {
     await navigator.clipboard.writeText(content);
@@ -94,13 +112,14 @@ dom.copyBtn.addEventListener('click', async () => {
   }
 });
 
-dom.printBtn.addEventListener('click', () => {
+dom.printBtn?.addEventListener('click', () => {
   window.print();
 });
 
 function formatDate(val) {
   if (!val) return '';
   const d = new Date(val);
+  if (isNaN(d.getTime())) return val;
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
@@ -113,43 +132,25 @@ function sanitizeOutput(html) {
 }
 
 function setLoadingState(isLoading) {
+  if (!dom.generateBtn) return;
   dom.generateBtn.disabled = isLoading;
   if (isLoading) {
-    dom.btnText.textContent = 'Membuat Surat...';
-    dom.spinner.classList.remove('hidden');
+    if (dom.btnText) dom.btnText.textContent = 'Membuat Surat...';
+    dom.spinner?.classList.remove('hidden');
   } else {
-    dom.btnText.textContent = 'Buat Surat Otomatis';
-    dom.spinner.classList.add('hidden');
+    if (dom.btnText) dom.btnText.textContent = 'Buat Surat Otomatis';
+    dom.spinner?.classList.add('hidden');
   }
 }
 
 function showStatus(text, type) {
+  if (!dom.statusMessage) return;
   dom.statusMessage.textContent = text;
   dom.statusMessage.className = `status-msg ${type}`;
 }
 
 function clearStatus() {
-  dom.statusMessage.textContent = '';
-  dom.statusMessage.className = 'status-msg hidden';
-}
-
-function setLoadingState(isLoading) {
-  dom.generateBtn.disabled = isLoading;
-  if (isLoading) {
-    dom.btnText.textContent = 'Membuat Surat...';
-    dom.spinner.classList.remove('hidden');
-  } else {
-    dom.btnText.textContent = 'Buat Surat Otomatis';
-    dom.spinner.classList.add('hidden');
-  }
-}
-
-function showStatus(text, type) {
-  dom.statusMessage.textContent = text;
-  dom.statusMessage.className = `status-msg ${type}`;
-}
-
-function clearStatus() {
+  if (!dom.statusMessage) return;
   dom.statusMessage.textContent = '';
   dom.statusMessage.className = 'status-msg hidden';
 }
