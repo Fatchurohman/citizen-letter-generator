@@ -1,7 +1,6 @@
 const CONFIG = {
-  // Ganti string di bawah ini dengan API key yang barusan kamu buat dari AI Studio
-  DEFAULT_API_KEY: 'AQ.Ab8RN6Lv8dVSrGAGF_rYegTiT3Xr6_Cbzw_T3WiZ9uA9uzaYMA',
-  GEMINI_MODEL: 'gemini-3.7-flash'
+  API_KEY: 'AQ.Ab8RN6JB_EZVnSnLgTpw6cctSPkFqhXNHf_QNR-ivb081uYu-g',
+  GEMINI_MODEL: 'gemini-2.5-flash'
 };
 
 const dom = {
@@ -27,14 +26,14 @@ const dom = {
   statusMessage: document.getElementById('statusMessage')
 };
 
-// Handler Generate Surat
+// Handler Submit Form
 dom.form.addEventListener('submit', async (e) => {
   e.preventDefault();
   clearStatus();
 
-  const apiKey = CONFIG.DEFAULT_API_KEY.trim();
-  if (!apiKey || apiKey === 'ISI_API_KEY_KAMU_DISINI') {
-    showStatus('Kesalahan konfigurasi: API Key belum diisi di dalam file app.js.', 'error');
+  const apiKey = CONFIG.API_KEY.trim();
+  if (!apiKey) {
+    showStatus('API Key belum diatur di app.js.', 'error');
     return;
   }
 
@@ -61,7 +60,7 @@ dom.form.addEventListener('submit', async (e) => {
     dom.letterOutput.innerHTML = sanitizeOutput(rawHtml);
     dom.copyBtn.disabled = false;
     dom.printBtn.disabled = false;
-    showStatus('Surat dinas berhasil disusun. Teks siap disunting atau dicetak.', 'success');
+    showStatus('Surat dinas berhasil disusun. Dokumen siap dicetak atau disunting.', 'success');
   } catch (err) {
     showStatus(`Gagal memproses dokumen: ${err.message}`, 'error');
   } finally {
@@ -69,37 +68,36 @@ dom.form.addEventListener('submit', async (e) => {
   }
 });
 
-// Panggilan Request Gemini API
+// Request ke Gemini REST API dengan Auth Key Header (`AQ.`)
 async function fetchLetterAI(apiKey, data) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
 
-  const promptSystem = `Anda adalah sekretaris RT/RW di Indonesia yang ahli menyusun surat dinas dan surat pengantar warga resmi. 
-Format output WAJIB berupa elemen HTML utuh (menggunakan tag <div>, <p>, <table>, <hr>, <b>, dll) yang langsung siap ditampilkan di lembar dokumen cetak standar A4.
+  const promptSystem = `Anda adalah staf sekretariat RT/RW di Indonesia. 
+Buat format surat dinas resmi siap cetak standar A4 menggunakan tag HTML utuh (div, table, p, hr, b, dsb).
 Format Dokumen:
-1. Kop Surat RT/RW (Rata tengah, garis pembatas <hr>).
+1. Kop Surat RT/RW (Tengah, ada garis pembatas hr).
 2. Judul Surat & Nomor Surat.
-3. Kalimat pembuka formal.
-4. Tabel rincian data pemohon (Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Pekerjaan, Alamat).
-5. Isi keterangan lengkap & keperluan pengantar.
-6. Kalimat penutup formal.
-7. Kolom tanda tangan di bagian bawah (Kiri: Mengetahui Ketua RW, Kanan: Ketua RT, dilengkapi tempat & tanggal).
-Gunakan bahasa baku, formal, dan EYD yang benar. Jangan sertakan markdown fence (\`\`\`html) pada respon.`;
+3. Pembuka formal.
+4. Tabel rincian biodata pemohon (Nama, NIK, Tempat/Tgl Lahir, Jenis Kelamin, Pekerjaan, Alamat).
+5. Keterangan isi permohonan.
+6. Penutup formal.
+7. Kolom tanda tangan di bawah (Kiri: Ketua RW, Kanan: Ketua RT dengan tempat & tanggal).
+Gunakan bahasa formal dan EYD baku. Jangan tambahkan markdown fence (\`\`\`html) pada respon.`;
 
-  const promptUser = `Susun surat formal berdasarkan data berikut:
-- Jenis: ${data.letterType}
-- Nomor: ${data.letterNumber}
-- Tanggal Terbit: ${data.currentDate}
-- Data Warga:
-  * Nama: ${data.fullName}
-  * NIK: ${data.nik}
-  * Tempat/Tgl Lahir: ${data.birthPlace}, ${data.birthDate}
-  * Jenis Kelamin: ${data.gender}
-  * Pekerjaan: ${data.occupation}
-  * Alamat: ${data.address}
-- Keperluan: ${data.purpose}
-- Pejabat:
-  * Ketua RT: ${data.rtName}
-  * Ketua RW: ${data.rwName}`;
+  const promptUser = `Jenis Surat: ${data.letterType}
+Nomor Surat: ${data.letterNumber}
+Tanggal Surat: ${data.currentDate}
+Data Pemohon:
+- Nama: ${data.fullName}
+- NIK: ${data.nik}
+- Tempat, Tanggal Lahir: ${data.birthPlace}, ${data.birthDate}
+- Jenis Kelamin: ${data.gender}
+- Pekerjaan: ${data.occupation}
+- Alamat: ${data.address}
+Keperluan: ${data.purpose}
+Pengesahan:
+- Ketua RT: ${data.rtName}
+- Ketua RW: ${data.rwName}`;
 
   const body = {
     contents: [
@@ -107,12 +105,18 @@ Gunakan bahasa baku, formal, dan EYD yang benar. Jangan sertakan markdown fence 
         role: "user",
         parts: [{ text: `${promptSystem}\n\n${promptUser}` }]
       }
-    ]
+    ],
+    generationConfig: {
+      temperature: 0.1
+    }
   };
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
     body: JSON.stringify(body)
   });
 
@@ -125,31 +129,30 @@ Gunakan bahasa baku, formal, dan EYD yang benar. Jangan sertakan markdown fence 
   const textOutput = dataRes?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!textOutput) {
-    throw new Error('Hasil respon AI kosong atau format tidak sesuai.');
+    throw new Error('Respon AI kosong atau tidak valid.');
   }
 
   return textOutput.replace(/^```html\s*|```\s*$/gi, '').trim();
 }
 
-// Salin Teks
+// Action Buttons
 dom.copyBtn.addEventListener('click', async () => {
   const content = dom.letterOutput.innerText;
   if (!content) return;
 
   try {
     await navigator.clipboard.writeText(content);
-    showStatus('Teks surat berhasil disalin.', 'info');
+    showStatus('Teks surat berhasil disalin ke clipboard.', 'info');
   } catch {
-    showStatus('Tidak dapat menyalin ke clipboard secara otomatis.', 'error');
+    showStatus('Gagal menyalin teks otomatis.', 'error');
   }
 });
 
-// Cetak Dokumen
 dom.printBtn.addEventListener('click', () => {
   window.print();
 });
 
-// Helper Formatting & Sanitasi
+// Format Tanggal & Sanitasi
 function formatDate(val) {
   if (!val) return '';
   const d = new Date(val);
