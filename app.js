@@ -1,6 +1,6 @@
 const CONFIG = {
   // Ganti string di bawah ini dengan API key yang barusan kamu buat dari AI Studio
-  DEFAULT_API_KEY: 'ISI_API_KEY_KAMU_DISINI',
+  DEFAULT_API_KEY: 'AQ.Ab8RN6Lv8dVSrGAGF_rYegTiT3Xr6_Cbzw_T3WiZ9uA9uzaYMA',
   GEMINI_MODEL: 'gemini-3.7-flash'
 };
 
