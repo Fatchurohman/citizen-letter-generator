@@ -1,6 +1,6 @@
 const CONFIG = {
   API_KEY: 'AQ.Ab8RN6JB_EZVnSnLgTpw6cctSPkFqhXNHf_QNR-ivb081uYu-g',
-  GEMINI_MODEL: 'gemini-2.5-flash'
+  GEMINI_MODEL: 'gemini-3.5-flash'
 };
 
 const dom = {
@@ -68,7 +68,7 @@ dom.form.addEventListener('submit', async (e) => {
   }
 });
 
-// Request ke Gemini REST API dengan Auth Key Header (`AQ.`)
+// Request ke Gemini REST API dengan model 3.5-flash
 async function fetchLetterAI(apiKey, data) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
 
