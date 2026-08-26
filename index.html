@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Letter Generator - Luxury Gold Edition</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1 class="gold-title">CITIZEN LETTER GENERATOR</h1>
+      <div class="developer-badge">
+        <span class="status-dot"></span>
+        <span class="dev-text">developer: <strong>fatur62</strong></span>
+      </div>
+    </header>
+
+    <main class="grid-layout">
+      <!-- Panel Formulir -->
+      <section class="panel form-panel gold-border">
+        <div class="panel-header">
+          <h2 class="panel-title">Form Data Warga</h2>
+        </div>
+
+        <form id="letterForm">
+          <div class="form-group">
+            <label for="apiKey">Gemini API Key</label>
+            <input type="password" id="apiKey" placeholder="Masukkan Gemini API Key..." required>
+            <small>Kunci tersimpan aman di browser lokal Anda.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="letterType">Jenis Surat</label>
+              <select id="letterType" required>
+                <option value="Surat Pengantar SKCK">Surat Pengantar SKCK</option>
+                <option value="Surat Keterangan Domisili">Surat Keterangan Domisili</option>
+                <option value="Surat Keterangan Usaha (SKU)">Surat Keterangan Usaha (SKU)</option>
+                <option value="Surat Keterangan Tidak Mampu (SKTM)">Surat Keterangan Tidak Mampu (SKTM)</option>
+                <option value="Surat Keterangan Kematian">Surat Keterangan Kematian</option>
+                <option value="Surat Izin Keramaian">Surat Izin Keramaian</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="letterNumber">Nomor Surat (Opsional)</label>
+              <input type="text" id="letterNumber" placeholder="045/RT02/VIII/2026">
+            </div>
+          </div>
+
+          <fieldset class="form-section">
+            <legend>Data Identitas Pemohon</legend>
+            <div class="form-group">
+              <label for="fullName">Nama Lengkap</label>
+              <input type="text" id="fullName" placeholder="Nama lengkap sesuai KTP" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="nik">NIK (16 Digit)</label>
+                <input type="text" id="nik" maxlength="16" placeholder="3404xxxxxxxxxxxx" required>
+              </div>
+              <div class="form-group">
+                <label for="gender">Jenis Kelamin</label>
+                <select id="gender" required>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="birthPlace">Tempat Lahir</label>
+                <input type="text" id="birthPlace" placeholder="Sleman" required>
+              </div>
+              <div class="form-group">
+                <label for="birthDate">Tanggal Lahir</label>
+                <input type="date" id="birthDate" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="occupation">Pekerjaan</label>
+              <input type="text" id="occupation" placeholder="Wiraswasta / Karyawan Swasta" required>
+            </div>
+            <div class="form-group">
+              <label for="address">Alamat Lengkap</label>
+              <textarea id="address" rows="2" placeholder="RT 03 / RW 12, Padukuhan..." required></textarea>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>Pejabat Berwenang & Keterangan</legend>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="rtName">Nama Ketua RT</label>
+                <input type="text" id="rtName" placeholder="Nama Ketua RT" required>
+              </div>
+              <div class="form-group">
+                <label for="rwName">Nama Ketua RW</label>
+                <input type="text" id="rwName" placeholder="Nama Ketua RW" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="purpose">Keperluan / Keterangan</label>
+              <textarea id="purpose" rows="2" placeholder="Persyaratan administrasi pendaftaran / berkas dinas..." required></textarea>
+            </div>
+          </fieldset>
+
+          <button type="submit" id="generateBtn" class="btn btn-gold">
+            <span class="btn-text">Generate Surat AI</span>
+            <span class="spinner hidden"></span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Panel Preview -->
+      <section class="panel preview-panel gold-border">
+        <div class="preview-toolbar">
+          <h2 class="panel-title">Letter Preview</h2>
+          <div class="toolbar-actions">
+            <button id="copyBtn" class="btn btn-secondary" disabled>Salin Teks</button>
+            <button id="printBtn" class="btn btn-gold-outline" disabled>Cetak / PDF</button>
+          </div>
+        </div>
+
+        <div id="statusMessage" class="status-msg hidden"></div>
+
+        <div class="paper-viewport">
+          <div id="letterOutput" class="letter-paper" contenteditable="true">
+            <div class="empty-state">
+              <div class="gold-icon">⚜</div>
+              <p>Lengkapi formulir di samping dan tekan tombol <strong>Generate Surat AI</strong>.</p>
+              <p class="sub-hint">Dokumen yang dihasilkan dapat disunting langsung sebelum dicetak.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
