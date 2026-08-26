@@ -57,7 +57,14 @@ dom.form.addEventListener('submit', async (e) => {
     dom.printBtn.disabled = false;
     showStatus('Dokumen surat berhasil disusun secara otomatis.', 'success');
   } catch (err) {
-    const errorMessage = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
+    let errorMessage = 'Terjadi kesalahan sistem yang tidak diketahui.';
+    if (typeof err === 'string') {
+      errorMessage = err;
+    } else if (err instanceof Error) {
+      errorMessage = err.message;
+    } else if (err && typeof err === 'object') {
+      errorMessage = err.error || err.message || JSON.stringify(err);
+    }
     showStatus(`Gagal memproses dokumen: ${errorMessage}`, 'error');
   } finally {
     setLoadingState(false);
@@ -90,7 +97,7 @@ async function fetchLetterAI(data) {
   }
 
   if (dataRes?.error) {
-    throw new Error(dataRes.error);
+    throw new Error(typeof dataRes.error === 'string' ? dataRes.error : JSON.stringify(dataRes.error));
   }
 
   const textOutput = dataRes?.candidates?.[0]?.content?.parts?.[0]?.text;
