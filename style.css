@@ -33,7 +33,6 @@ body {
   margin: 0 auto;
 }
 
-/* Header & Developer Badge */
 .app-header {
   text-align: center;
   margin-bottom: 2.5rem;
@@ -95,7 +94,6 @@ body {
   }
 }
 
-/* Grid & Panels */
 .grid-layout {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
@@ -125,7 +123,6 @@ body {
   color: var(--gold-light);
 }
 
-/* Form Styles */
 .form-panel {
   max-height: 82vh;
   overflow-y: auto;
@@ -184,13 +181,6 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
 }
 
-small {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  margin-top: 0.35rem;
-}
-
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -238,7 +228,6 @@ small {
   cursor: not-allowed;
 }
 
-/* Document Paper */
 .preview-toolbar {
   display: flex;
   justify-content: space-between;
@@ -291,7 +280,6 @@ small {
   margin-top: 0.5rem;
 }
 
-/* Status Notifications */
 .status-msg {
   padding: 0.75rem 1rem;
   border-radius: 6px;
@@ -345,7 +333,6 @@ small {
   }
 }
 
-/* Print Standard Media Query */
 @media print {
   body {
     background: none;
