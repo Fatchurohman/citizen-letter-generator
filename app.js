@@ -1,5 +1,5 @@
 const CONFIG = {
-  GEMINI_MODEL: 'gemini-2.5-flash',
+  GEMINI_MODEL: 'gemini-3.6-flash',
   STORAGE_KEY_API: 'citizen_letter_api_key'
 };
 
