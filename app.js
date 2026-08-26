@@ -73,7 +73,7 @@ dom.form.addEventListener('submit', async (e) => {
 
 async function fetchLetterAI(data) {
   if (!CONFIG.GAS_URL || CONFIG.GAS_URL.startsWith('SALIN_URL')) {
-    throw new Error('URL Google Apps Script belum dikonfigurasi di app.js.');
+    throw new Error('https://script.google.com/macros/s/AKfycbz1fX53liAfW2zUZNDydG2PdD0f5T8HaZI8LMxSX9PyNdApEiMhrGbNOmfSrIxTcK1xcQ/exec');
   }
 
   const res = await fetch(CONFIG.GAS_URL, {
