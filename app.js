@@ -1,6 +1,5 @@
 const CONFIG = {
-  GEMINI_MODEL: 'gemini-3.5-flash',
-  // Kunci API tertanam langsung agar warga bisa pakai 1-klik tanpa ribet
+  GEMINI_MODEL: 'gemini-2.5-flash', // Menggunakan model stabil standar
   MASTER_KEY: 'AQ.Ab8RN6JB_EZVnSnLgTpw6cctSPkFqhXNHf_QNR-ivb081uYu-g'
 };
 
@@ -63,7 +62,8 @@ dom.form.addEventListener('submit', async (e) => {
 });
 
 async function fetchLetterAI(data) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
+  // Menggunakan parameter ?key= agar lolos autentikasi langsung dari browser
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${CONFIG.MASTER_KEY}`;
 
   const promptSystem = `Anda adalah staf sekretariat RT/RW di Indonesia. 
 Buat format surat dinas resmi siap cetak standar A4 menggunakan tag HTML utuh (div, table, p, hr, b, dsb).
@@ -107,8 +107,7 @@ Pengesahan:
   const res = await fetch(url, {
     method: 'POST',
     headers: { 
-      'Content-Type': 'application/json',
-      'x-goog-api-key': CONFIG.MASTER_KEY
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(body)
   });
