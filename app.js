@@ -1,6 +1,6 @@
 const CONFIG = {
-  // Masukkan URL Web App Google Apps Script milikmu di bawah ini
-  GAS_URL: "SALIN_URL_WEB_APP_GAS_DISINI"
+  // Masukkan URL Web App Google Apps Script kamu di dalam tanda kutip ini:
+  GAS_URL: "https://script.google.com/macros/s/AKfycbz1FX53liAfW2uZNDyg2PdD0fST8HaZI8LMxSX9PyNdApEiMhrGbNOmfSrIxTck1xcQ/exec"
 };
 
 const dom = {
@@ -57,7 +57,7 @@ dom.form.addEventListener('submit', async (e) => {
     dom.printBtn.disabled = false;
     showStatus('Dokumen surat berhasil disusun secara otomatis.', 'success');
   } catch (err) {
-    let errorMessage = 'Terjadi kesalahan sistem yang tidak diketahui.';
+    let errorMessage = 'Terjadi kesalahan sistem.';
     if (typeof err === 'string') {
       errorMessage = err;
     } else if (err instanceof Error) {
@@ -72,8 +72,8 @@ dom.form.addEventListener('submit', async (e) => {
 });
 
 async function fetchLetterAI(data) {
-  if (!CONFIG.GAS_URL || CONFIG.GAS_URL.startsWith('SALIN_URL')) {
-    throw new Error('https://script.google.com/macros/s/AKfycbz1fX53liAfW2zUZNDydG2PdD0f5T8HaZI8LMxSX9PyNdApEiMhrGbNOmfSrIxTcK1xcQ/exec');
+  if (!CONFIG.GAS_URL || CONFIG.GAS_URL.includes('---URL_ANDA_DISINI---')) {
+    throw new Error('URL Google Apps Script belum dikonfigurasi di app.js.');
   }
 
   const res = await fetch(CONFIG.GAS_URL, {
